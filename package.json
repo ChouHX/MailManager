@@ -1,6 +1,6 @@
 {
   "name": "mail-tauri",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "packageManager": "pnpm@10.13.1",
   "type": "module",
@@ -13,7 +13,7 @@
     "build:linux": "tauri build --bundles deb,rpm",
     "build:windows": "tauri build --target x86_64-pc-windows-msvc",
     "build:macos": "tauri build",
-    "check": "tsc -b && cargo check --manifest-path src-tauri/Cargo.toml",
+    "check": "pnpm build:web && cargo check --manifest-path src-tauri/Cargo.toml",
     "lint": "eslint ."
   },
   "dependencies": {

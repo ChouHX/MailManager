@@ -1,6 +1,6 @@
 [package]
 name = "ccmtc-mail"
-version = "0.1.0"
+version = "0.1.1"
 description = "Compact Outlook mailbox desktop client"
 authors = ["CCMTC"]
 edition = "2021"
