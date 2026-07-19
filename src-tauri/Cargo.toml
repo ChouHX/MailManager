@@ -1,0 +1,31 @@
+[package]
+name = "ccmtc-mail"
+version = "0.1.0"
+description = "Compact Outlook mailbox desktop client"
+authors = ["CCMTC"]
+edition = "2021"
+
+[lib]
+name = "ccmtc_mail_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+base64 = "0.22.1"
+chrono = { version = "0.4.44", features = ["serde"] }
+mailparse = "0.16.1"
+regex = "1.12.3"
+reqwest = { version = "0.12.28", default-features = false, features = ["json", "rustls-tls"] }
+rustls = { version = "0.23.40", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+tauri = { version = "2.11.3", features = [] }
+tauri-plugin-opener = "2.5.4"
+tokio = { version = "1.52.0", features = ["rt-multi-thread", "macros", "time"] }
+webpki-roots = "1.0.5"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
