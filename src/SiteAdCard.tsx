@@ -1,11 +1,12 @@
-import { GemIcon } from "lucide-react";
+import { GemIcon, MegaphoneIcon } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 import type { AdSlotConfig } from "./ad";
+import { Button } from "./ui";
 
 const SITE_ORIGIN = "https://ccmtc.cfd";
 
-function resolveSiteAsset(value: string) {
+function resolveSiteUrl(value: string) {
   const source = value.trim();
   if (!source) return "";
   try {
@@ -15,59 +16,35 @@ function resolveSiteAsset(value: string) {
   }
 }
 
-export function SiteAdCard({
-  config,
-  compact = false,
-}: {
-  config: AdSlotConfig;
-  compact?: boolean;
-}) {
+export function SiteAdCard({ config }: { config: AdSlotConfig }) {
   if (!config.enabled) {
     return null;
   }
-  const imageUrl = resolveSiteAsset(config.image_url);
   const action = config.primary_action;
 
   return (
-    <section className={`site-ad-card ${compact ? "site-ad-compact" : ""}`}>
-      <div className="site-ad-background" aria-hidden="true">
-        <div className="site-ad-glow site-ad-glow-left" />
-        <div className="site-ad-glow site-ad-glow-right" />
+    <section className="flex min-h-46 items-center gap-9 overflow-hidden rounded-lg border border-line bg-muted px-8 py-3">
+      {/* Icon instead of a remote image: nothing to fail to load. */}
+      <span className="grid size-34 shrink-0 place-items-center rounded-sm border border-line bg-surface text-primary">
+        <MegaphoneIcon size={17} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <strong className="block truncate text-base tracking-tight">
+          {config.title}
+        </strong>
+        <p className="mt-3 truncate text-xs text-soft">{config.description}</p>
       </div>
-      <div className="site-ad-scan-host" aria-hidden="true">
-        <div className="site-ad-scan" />
-      </div>
-      {imageUrl ? (
-        <div className="site-ad-image">
-          <img
-            src={imageUrl}
-            alt={config.image_alt || config.title}
-            loading="lazy"
-          />
-        </div>
+      {action.label && action.href ? (
+        <Button
+          small
+          variant="accent"
+          className="shrink-0 rounded-full"
+          onClick={() => void openUrl(resolveSiteUrl(action.href))}
+        >
+          <GemIcon size={13} />
+          {action.label}
+        </Button>
       ) : null}
-      <div className="site-ad-copy">
-        <strong>{config.title}</strong>
-        <div className="site-ad-marquee">
-          <div className="site-ad-marquee-track">
-            <p>{config.description}</p>
-            <p aria-hidden="true">{config.description}</p>
-          </div>
-        </div>
-      </div>
-      {action?.label && action?.href ? (
-        <div className="site-ad-action-wrap">
-          <span className="site-ad-action-border" aria-hidden="true" />
-          <button
-            className="site-ad-action"
-            onClick={() => void openUrl(resolveSiteAsset(action.href))}
-          >
-            <GemIcon size={13} />
-            {action.label}
-          </button>
-        </div>
-      ) : null}
-      <div className="site-ad-bottom-line" aria-hidden="true" />
     </section>
   );
 }

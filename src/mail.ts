@@ -9,7 +9,6 @@ export type MailAccount = {
   password: string;
   client_id: string;
   refresh_token: string;
-  raw_line: string;
 };
 
 export type MailMessage = {
@@ -24,10 +23,7 @@ export type MailMessage = {
   body_type: "html" | "text";
 };
 
-export type MailboxResult = {
-  account_id: string;
-  email: string;
-  protocol: MailProtocol;
+type MailboxResult = {
   total: number;
   messages: MailMessage[];
   refresh_token: string;
@@ -46,6 +42,7 @@ export type BatchRow = {
   message: MailMessage | null;
   verificationCode: string;
   errors: Array<{ protocol: MailProtocol; message: string }>;
+  loading: boolean;
   completed: boolean;
   successfulProtocolCount: number;
 };
@@ -53,7 +50,7 @@ export type BatchRow = {
 const ACCOUNT_SEPARATOR = "----";
 export const DEFAULT_VERIFICATION_PATTERN = String.raw`(?:验证码|校验码|动态码|安全码|确认码|verification\s*code|security\s*code|one[-\s]?time\s*(?:code|password)|otp|pin)[^\d]{0,24}(\d{4,8})|(\d{4,8})[^\d]{0,24}(?:是您的验证码|is your (?:verification )?code|用于验证|完成验证)|(?:^|[^\d])(\d{6})(?:[^\d]|$)`;
 
-export function createAccountId(
+function createAccountId(
   email: string,
   clientId: string,
   refreshToken: string,
@@ -67,7 +64,7 @@ export function createAccountId(
   return `mail-${(hash >>> 0).toString(36)}`;
 }
 
-export function parseAccountLine(rawLine: string): MailAccount | null {
+function parseAccountLine(rawLine: string): MailAccount | null {
   const line = rawLine.trim();
   if (!line || !line.includes(ACCOUNT_SEPARATOR)) {
     return null;
@@ -76,9 +73,7 @@ export function parseAccountLine(rawLine: string): MailAccount | null {
   if (parts.length < 4) {
     return null;
   }
-  const email = parts[0];
-  const password = parts[1];
-  const clientId = parts[2];
+  const [email, password, clientId] = parts;
   const refreshToken = parts.slice(3).join(ACCOUNT_SEPARATOR);
   if (!email || !clientId || !refreshToken) {
     return null;
@@ -89,7 +84,6 @@ export function parseAccountLine(rawLine: string): MailAccount | null {
     password,
     client_id: clientId,
     refresh_token: refreshToken,
-    raw_line: line,
   };
 }
 
@@ -115,7 +109,7 @@ export function parseAccountText(text: string) {
   return { accounts, invalidLines };
 }
 
-export async function fetchMailbox(
+async function fetchMailbox(
   account: MailAccount,
   protocol: MailProtocol,
   folder: MailFolder,
@@ -167,25 +161,17 @@ export async function fetchAccount(
     }
   }
 
-  const nextAccount =
-    nextRefreshToken === account.refresh_token
-      ? account
-      : {
-          ...account,
-          refresh_token: nextRefreshToken,
-          raw_line: [
-            account.email,
-            account.password,
-            account.client_id,
-            nextRefreshToken,
-          ].join(ACCOUNT_SEPARATOR),
-        };
-
   return {
-    account: nextAccount,
+    account:
+      nextRefreshToken === account.refresh_token
+        ? account
+        : { ...account, refresh_token: nextRefreshToken },
     total,
     messages: sortMessages(messages).slice(0, Math.max(1, limit)),
-    errors,
+    // A mailbox only counts as failed when no protocol worked. If IMAP
+    // succeeds and Graph errors the user still got their mail, so the
+    // per-protocol error is noise and gets dropped here.
+    errors: successfulProtocols.length ? [] : errors,
     successfulProtocols,
   };
 }
@@ -194,11 +180,9 @@ export async function runWithConcurrency<T, R>(
   items: T[],
   concurrency: number,
   worker: (item: T, index: number) => Promise<R>,
-  onProgress?: (processed: number, total: number) => void,
 ) {
   const results = new Array<R>(items.length);
   let cursor = 0;
-  let processed = 0;
   const safeConcurrency = Math.max(
     1,
     Math.min(30, Math.floor(concurrency) || 1),
@@ -209,8 +193,6 @@ export async function runWithConcurrency<T, R>(
       const index = cursor;
       cursor += 1;
       results[index] = await worker(items[index], index);
-      processed += 1;
-      onProgress?.(processed, items.length);
     }
   }
 
@@ -223,9 +205,8 @@ export async function runWithConcurrency<T, R>(
   return results;
 }
 
-export function stripHtml(html: string) {
-  const documentValue = new DOMParser().parseFromString(html, "text/html");
-  return documentValue.body.textContent || "";
+function stripHtml(html: string) {
+  return new DOMParser().parseFromString(html, "text/html").body.textContent || "";
 }
 
 export function extractVerificationCode(
@@ -250,7 +231,7 @@ export function extractVerificationCode(
   }
 }
 
-export function sortMessages(messages: MailMessage[]) {
+function sortMessages(messages: MailMessage[]) {
   return [...messages].sort((left, right) => {
     const leftTime = Date.parse(left.received_at) || 0;
     const rightTime = Date.parse(right.received_at) || 0;
