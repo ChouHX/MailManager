@@ -1,6 +1,6 @@
 # MailManager
 
-独立的 Tauri 2 + React 桌面取件工具，只在本机保存手动导入的 Outlook OAuth 账号。
+独立的 Tauri 2 + React + Tailwind CSS 4 桌面取件工具，只在本机保存手动导入的 Outlook OAuth 账号。
 
 ## 功能
 
@@ -9,7 +9,7 @@
 - 批量取件：按当前页读取、默认 5 个并发、验证码正则提取
 - 单邮箱取件：IMAP / Graph 服务端分页、邮件列表和正文详情弹窗
 - 收件箱 / 垃圾箱切换
-- 复用 `ccmtc.cfd` 站点广告配置
+- 复用 `ccmtc.cfd` 站点广告配置（图标占位，不加载远程图片）
 - 明暗主题与紧凑桌面布局
 
 账号格式：

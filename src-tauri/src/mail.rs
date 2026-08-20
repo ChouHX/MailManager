@@ -8,7 +8,7 @@ use rustls::{ClientConfig, ClientConnection, RootCertStore, StreamOwned};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
 const TOKEN_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
@@ -16,17 +16,47 @@ const IMAP_SCOPE: &str = "https://outlook.office.com/IMAP.AccessAsUser.All offli
 const GRAPH_SCOPE: &str = "https://graph.microsoft.com/.default";
 const GRAPH_API_BASE: &str = "https://graph.microsoft.com/v1.0";
 const IMAP_HOST: &str = "outlook.live.com";
+const HTTP_TIMEOUT: Duration = Duration::from_secs(25);
+
+static STYLE_BLOCK_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?is)<(style|script)[^>]*>.*?</(style|script)>").expect("valid regex")
+});
+
+static HTML_TAG_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?is)<[^>]+>").expect("valid regex"));
+
+static IMAP_LITERAL_PATTERN: LazyLock<BytesRegex> =
+    LazyLock::new(|| BytesRegex::new(r"\{(\d+)\}\r\n").expect("valid literal regex"));
+
+static HTTP_CLIENT: LazyLock<Client> = LazyLock::new(|| {
+    Client::builder()
+        .timeout(HTTP_TIMEOUT)
+        .build()
+        .expect("valid reqwest client")
+});
+
+static IMAP_TLS_CONFIG: LazyLock<Arc<ClientConfig>> = LazyLock::new(|| {
+    let mut roots = RootCertStore::empty();
+    roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+    Arc::new(
+        ClientConfig::builder()
+            .with_root_certificates(roots)
+            .with_no_client_auth(),
+    )
+});
 
 pub(crate) fn install_crypto_provider() {
     let _ = rustls::crypto::ring::default_provider().install_default();
 }
 
+/// Shared HTTP client reused across every mailbox and site request.
+pub(crate) fn http_client() -> &'static Client {
+    &HTTP_CLIENT
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct MailAccount {
-    pub id: String,
     pub email: String,
-    #[serde(default, rename = "password")]
-    pub _password: String,
     pub client_id: String,
     pub refresh_token: String,
 }
@@ -58,9 +88,6 @@ pub struct MailMessage {
 
 #[derive(Debug, Serialize)]
 pub struct MailboxResult {
-    pub account_id: String,
-    pub email: String,
-    pub protocol: String,
     pub total: usize,
     pub messages: Vec<MailMessage>,
     pub refresh_token: String,
@@ -167,12 +194,8 @@ fn parse_remote_error(body: &str, fallback: &str) -> String {
 }
 
 fn strip_html(value: &str) -> String {
-    let without_style = Regex::new(r"(?is)<(style|script)[^>]*>.*?</(style|script)>")
-        .expect("valid regex")
-        .replace_all(value, " ");
-    let without_tags = Regex::new(r"(?is)<[^>]+>")
-        .expect("valid regex")
-        .replace_all(&without_style, " ");
+    let without_style = STYLE_BLOCK_PATTERN.replace_all(value, " ");
+    let without_tags = HTML_TAG_PATTERN.replace_all(&without_style, " ");
     compact_text(
         &without_tags
             .replace("&nbsp;", " ")
@@ -363,8 +386,7 @@ fn recent_uids_page(uids: &[u32], offset: usize, limit: usize) -> Vec<u32> {
 }
 
 fn extract_imap_literal(response: &[u8]) -> Result<Vec<u8>, String> {
-    let literal = BytesRegex::new(r"\{(\d+)\}\r\n").expect("valid literal regex");
-    let captures = literal
+    let captures = IMAP_LITERAL_PATTERN
         .captures(response)
         .ok_or_else(|| "IMAP FETCH 未返回邮件正文".to_string())?;
     let full = captures.get(0).expect("full literal match");
@@ -396,14 +418,9 @@ fn fetch_imap_messages(
         .set_write_timeout(Some(Duration::from_secs(25)))
         .map_err(|error| error.to_string())?;
 
-    let mut roots = RootCertStore::empty();
-    roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
-    let config = ClientConfig::builder()
-        .with_root_certificates(roots)
-        .with_no_client_auth();
     let server_name = ServerName::try_from(IMAP_HOST.to_string())
         .map_err(|error| format!("IMAP TLS 主机名错误: {error}"))?;
-    let connection = ClientConnection::new(Arc::new(config), server_name)
+    let connection = ClientConnection::new(IMAP_TLS_CONFIG.clone(), server_name)
         .map_err(|error| format!("IMAP TLS 初始化失败: {error}"))?;
     let mut stream = StreamOwned::new(connection, socket);
     read_greeting(&mut stream)?;
@@ -551,22 +568,19 @@ pub async fn fetch_mailbox(request: FetchMailboxRequest) -> Result<MailboxResult
         return Err("账号、Client ID 和 Refresh Token 为必填项".to_string());
     }
 
-    let client = Client::builder()
-        .timeout(Duration::from_secs(25))
-        .build()
-        .map_err(|error| error.to_string())?;
+    let client = http_client();
     let scope = if protocol == "graph" {
         GRAPH_SCOPE
     } else {
         IMAP_SCOPE
     };
     let (access_token, refresh_token) =
-        refresh_access_token(&client, &request.account, scope).await?;
+        refresh_access_token(client, &request.account, scope).await?;
     let (folder_key, _) = normalized_folder(&request.folder);
     let safe_limit = request.limit.clamp(1, 100);
     let (total, messages) = if protocol == "graph" {
         fetch_graph_messages(
-            &client,
+            client,
             &access_token,
             folder_key,
             safe_limit,
@@ -585,18 +599,10 @@ pub async fn fetch_mailbox(request: FetchMailboxRequest) -> Result<MailboxResult
     };
 
     Ok(MailboxResult {
-        account_id: request.account.id,
-        email: request.account.email,
-        protocol,
         total,
         messages,
         refresh_token,
     })
-}
-
-#[tauri::command]
-pub fn health_check() -> &'static str {
-    "ok"
 }
 
 #[cfg(test)]

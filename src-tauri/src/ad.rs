@@ -1,6 +1,5 @@
-use reqwest::Client;
+use crate::mail::http_client;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 
 const SITE_AD_URL: &str = "https://ccmtc.cfd/api/ui/ads";
 
@@ -21,10 +20,6 @@ pub struct AdSlotConfig {
     #[serde(default)]
     pub description: String,
     #[serde(default)]
-    pub image_url: String,
-    #[serde(default)]
-    pub image_alt: String,
-    #[serde(default)]
     pub primary_action: AdAction,
 }
 
@@ -38,11 +33,7 @@ struct ApiEnvelope {
 
 #[tauri::command]
 pub async fn fetch_ad_config() -> Result<AdSlotConfig, String> {
-    let client = Client::builder()
-        .timeout(Duration::from_secs(12))
-        .build()
-        .map_err(|error| format!("广告客户端初始化失败: {error}"))?;
-    let response = client
+    let response = http_client()
         .get(SITE_AD_URL)
         .header("Accept", "application/json")
         .send()

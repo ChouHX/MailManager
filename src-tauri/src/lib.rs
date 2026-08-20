@@ -8,8 +8,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             ad::fetch_ad_config,
-            mail::fetch_mailbox,
-            mail::health_check
+            mail::fetch_mailbox
         ])
         .run(tauri::generate_context!())
         .expect("error while running CCMTC Mail");
