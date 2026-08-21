@@ -1,6 +1,6 @@
 {
   "name": "mail-tauri",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "packageManager": "pnpm@10.13.1",
   "type": "module",
