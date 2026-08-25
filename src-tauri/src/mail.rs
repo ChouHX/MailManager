@@ -54,7 +54,7 @@ pub(crate) fn http_client() -> &'static Client {
     &HTTP_CLIENT
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MailAccount {
     pub email: String,
     pub client_id: String,
@@ -71,6 +71,23 @@ pub struct FetchMailboxRequest {
     pub limit: usize,
     #[serde(default)]
     pub offset: usize,
+}
+
+pub(crate) fn validate_fetch_request(request: &FetchMailboxRequest) -> Result<(), String> {
+    let protocol = request.protocol.trim().to_lowercase();
+    if protocol != "imap" && protocol != "graph" {
+        return Err("协议仅支持 imap 或 graph".to_string());
+    }
+    if request.account.email.trim().is_empty()
+        || request.account.client_id.trim().is_empty()
+        || request.account.refresh_token.trim().is_empty()
+    {
+        return Err("账号、Client ID 和 Refresh Token 为必填项".to_string());
+    }
+    if request.limit == 0 || request.limit > 100 {
+        return Err("limit 必须在 1 到 100 之间".to_string());
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -557,16 +574,8 @@ async fn fetch_graph_messages(
 
 #[tauri::command]
 pub async fn fetch_mailbox(request: FetchMailboxRequest) -> Result<MailboxResult, String> {
+    validate_fetch_request(&request)?;
     let protocol = request.protocol.trim().to_lowercase();
-    if protocol != "imap" && protocol != "graph" {
-        return Err("协议仅支持 imap 或 graph".to_string());
-    }
-    if request.account.email.trim().is_empty()
-        || request.account.client_id.trim().is_empty()
-        || request.account.refresh_token.trim().is_empty()
-    {
-        return Err("账号、Client ID 和 Refresh Token 为必填项".to_string());
-    }
 
     let client = http_client();
     let scope = if protocol == "graph" {
@@ -677,5 +686,37 @@ mod tests {
             "fallback",
         );
         assert_eq!(message, "ErrorAccessDenied: Access is denied.");
+    }
+
+    #[test]
+    fn validates_public_api_request_before_network_access() {
+        let account = MailAccount {
+            email: "mail@example.com".to_string(),
+            client_id: "client-id".to_string(),
+            refresh_token: "refresh-token".to_string(),
+        };
+        let valid = FetchMailboxRequest {
+            account: account.clone(),
+            protocol: "imap".to_string(),
+            folder: "inbox".to_string(),
+            limit: 20,
+            offset: 0,
+        };
+        assert!(validate_fetch_request(&valid).is_ok());
+
+        let invalid_protocol = FetchMailboxRequest {
+            protocol: "pop3".to_string(),
+            ..valid
+        };
+        assert!(validate_fetch_request(&invalid_protocol).is_err());
+
+        let invalid_limit = FetchMailboxRequest {
+            account,
+            protocol: "graph".to_string(),
+            folder: "spam".to_string(),
+            limit: 101,
+            offset: 0,
+        };
+        assert!(validate_fetch_request(&invalid_limit).is_err());
     }
 }

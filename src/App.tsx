@@ -1,4 +1,7 @@
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import {
+  BookOpenIcon,
   LayoutListIcon,
   MoonIcon,
   PlusIcon,
@@ -11,6 +14,7 @@ import { toast } from "sonner";
 import { fetchSiteAdConfig, type AdSlotConfig } from "./ad";
 import { BatchView } from "./BatchView";
 import {
+  ApiDocsDialog,
   ImportDialog,
   MessageDialog,
   RegexDialog,
@@ -83,6 +87,7 @@ export default function App() {
     null,
   );
   const [adSlot, setAdSlot] = useState<AdSlotConfig | null>(null);
+  const [apiDocsOpen, setApiDocsOpen] = useState(false);
 
   function updateSettings(patch: Partial<Settings>) {
     setSettings((current) => ({ ...current, ...patch }));
@@ -101,6 +106,9 @@ export default function App() {
 
   useEffect(() => {
     writeAccounts(accounts);
+    void invoke("sync_api_accounts", { accounts }).catch((error) => {
+      console.error("同步 API 账号失败", error);
+    });
     setSelectedAccountId((current) =>
       accounts.some((account) => account.id === current)
         ? current
@@ -114,6 +122,24 @@ export default function App() {
       });
     });
   }, [accounts]);
+
+  useEffect(() => {
+    const unlisten = listen<{ email: string; refresh_token: string }>(
+      "api-refresh-token",
+      ({ payload }) => {
+        setAccounts((current) =>
+          current.map((account) =>
+            account.email.toLowerCase() === payload.email.toLowerCase()
+              ? { ...account, refresh_token: payload.refresh_token }
+              : account,
+          ),
+        );
+      },
+    );
+    return () => {
+      void unlisten.then((dispose) => dispose());
+    };
+  }, []);
 
   useEffect(() => {
     const pages = Math.max(
@@ -426,6 +452,10 @@ export default function App() {
               <MoonIcon size={17} />
             )}
           </IconButton>
+          <Button onClick={() => setApiDocsOpen(true)}>
+            <BookOpenIcon size={15} />
+            API 文档
+          </Button>
           <Button variant="primary" onClick={() => setImportText("")}>
             <PlusIcon size={15} />
             导入账号
@@ -484,6 +514,10 @@ export default function App() {
           onSubmit={handleImport}
         />
       ) : null}
+      <ApiDocsDialog
+        open={apiDocsOpen}
+        onClose={() => setApiDocsOpen(false)}
+      />
       {regexDraft !== null ? (
         <RegexDialog
           value={regexDraft}
