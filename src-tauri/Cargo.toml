@@ -1,6 +1,6 @@
 [package]
 name = "ccmtc-mail"
-version = "0.1.3"
+version = "0.1.4"
 description = "Compact Outlook mailbox desktop client"
 authors = ["CCMTC"]
 edition = "2021"
@@ -23,6 +23,7 @@ rustls = { version = "0.23.40", default-features = false, features = ["ring", "s
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 tauri = { version = "2.11.3", features = [] }
+tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2.5.4"
 tokio = { version = "1.52.0", features = ["net", "rt-multi-thread", "time"] }
 webpki-roots = "1.0.5"

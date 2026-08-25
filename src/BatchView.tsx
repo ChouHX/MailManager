@@ -25,8 +25,8 @@ import {
   ProtocolBadge,
 } from "./ui";
 
-const CELL = "border-b border-line px-10 py-7 align-middle";
-const HEAD = `h-34 text-left text-2xs font-bold tracking-[0.055em] text-faint uppercase ${CELL}`;
+const CELL = "border-b border-line px-9 py-5 align-middle";
+const HEAD = `h-30 text-left text-2xs font-bold tracking-[0.055em] text-faint uppercase ${CELL}`;
 const MUTED = "block truncate text-2xs text-faint";
 
 const TONES = {
@@ -84,7 +84,7 @@ export function BatchView({
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface">
-      <header className="shrink-0 border-b border-line px-8 py-7">
+      <header className="shrink-0 border-b border-line px-6 py-5">
         <FetchToolbar
           protocols={protocols}
           folder={folder}
@@ -96,7 +96,7 @@ export function BatchView({
             <FileTextIcon size={14} />
             验证码正则
           </Button>
-          <label className="flex h-34 items-center gap-7 rounded-md border border-line bg-surface pr-7 pl-10">
+          <label className="flex h-30 items-center gap-6 rounded-md border border-line bg-surface pr-6 pl-8">
             <span className="text-xs text-soft">取件线程</span>
             <input
               type="number"
@@ -108,7 +108,7 @@ export function BatchView({
                   threadCount: clampThreads(event.target.value),
                 })
               }
-              className="h-24 w-42 rounded-xs bg-muted text-center text-ink"
+              className="h-22 w-38 rounded-xs bg-muted text-center text-ink"
             />
           </label>
           <Button variant="primary" onClick={onFetch} disabled={loading}>
@@ -198,8 +198,8 @@ function BatchRowCells({
   return (
     <tr
       className={cx(
-        "h-52",
-        message && "cursor-pointer hover:*:bg-primary-soft/40",
+        "h-48",
+        message && "cursor-pointer hover:*:bg-hover/70",
       )}
       onClick={() => message && onOpenMessage({ account, message })}
     >

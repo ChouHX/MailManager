@@ -20,16 +20,16 @@ export function cx(...values: Array<string | false | null | undefined>) {
 // Colours come from the semantic tokens in styles.css (`--color-*`), so light
 // and dark are one definition each and nothing here hardcodes a palette.
 const BUTTON_VARIANTS = {
-  // 主按钮：主色微渐变，克制的高光边框与轻量阴影
+  // 主按钮保持平面、清晰，避免渐变抢夺内容注意力。
   primary:
-    "border-primary/30 bg-linear-to-b from-primary to-primary-strong text-white shadow-key enabled:hover:brightness-105",
+    "border-primary bg-primary text-white shadow-key enabled:hover:border-primary-strong enabled:hover:bg-primary-strong",
 
   // 强调按钮：淡主色底配主色文字
   accent:
     "border-primary/30 bg-primary-soft text-primary enabled:hover:border-primary/50",
 
   // 辅助/默认按钮：卡片质感，中性边框
-  soft: "border-line bg-surface text-ink shadow-sm enabled:hover:bg-hover",
+  soft: "border-line bg-surface text-ink enabled:hover:border-line-strong enabled:hover:bg-hover",
 
   // 幽灵按钮：低调中性灰
   ghost: "border-transparent text-soft enabled:hover:bg-hover",
@@ -37,7 +37,7 @@ const BUTTON_VARIANTS = {
 
 const FOCUS_RING = "focus-visible:ring-2 focus-visible:ring-primary/30";
 const INTERACTIVE =
-  "cursor-pointer transition-all duration-150 outline-none select-none enabled:active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer transition-[background-color,border-color,color,box-shadow,transform] duration-100 outline-none select-none enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
 
 export function Button({
   variant = "soft",
@@ -57,8 +57,8 @@ export function Button({
         FOCUS_RING,
         "focus-visible:ring-offset-1",
         small
-          ? "min-h-28 rounded px-8 text-xs"
-          : "min-h-34 rounded-md px-12 text-sm",
+          ? "min-h-26 rounded px-7 text-xs"
+          : "min-h-30 rounded-md px-10 text-sm",
         BUTTON_VARIANTS[variant],
         className,
       )}
@@ -71,7 +71,7 @@ export function IconButton({ className, ...props }: ComponentProps<"button">) {
     <button
       {...props}
       className={cx(
-        "inline-flex size-34 shrink-0 items-center justify-center rounded-md border border-line bg-surface text-soft shadow-sm",
+        "inline-flex size-30 shrink-0 items-center justify-center rounded-md border border-line bg-surface text-soft",
         INTERACTIVE,
         FOCUS_RING,
         "enabled:hover:bg-hover enabled:hover:text-ink",
@@ -90,7 +90,7 @@ function Chip({
     <button
       {...props}
       className={cx(
-        "inline-flex h-28 items-center gap-5 rounded border px-8 text-xs font-medium",
+        "inline-flex h-26 items-center gap-5 rounded border px-7 text-xs font-medium",
         INTERACTIVE,
         active
           ? "border-primary/40 bg-primary-soft text-primary shadow-xs"
@@ -125,9 +125,9 @@ export function Segmented<T extends string>({
           onClick={() => onChange(option.value)}
           className={cx(
             "inline-flex cursor-pointer items-center justify-center gap-5 rounded font-medium transition-all duration-150 outline-none",
-            size === "md" ? "h-28 px-10 text-xs" : "h-24 px-8 text-xs",
+            size === "md" ? "h-26 px-9 text-xs" : "h-24 px-7 text-xs",
             option.value === value
-              ? "bg-surface text-ink shadow-tab"
+              ? "bg-primary-soft text-primary shadow-tab"
               : "text-soft hover:text-ink",
           )}
         >
@@ -139,7 +139,7 @@ export function Segmented<T extends string>({
 }
 
 const PILL =
-  "inline-flex h-26 items-center gap-4 rounded border border-primary/30 bg-primary-soft/80 px-8 font-mono text-xs font-semibold tracking-wider text-primary";
+  "inline-flex h-24 items-center gap-4 rounded border border-primary/30 bg-primary-soft/80 px-7 font-mono text-xs font-semibold tracking-wider text-primary";
 
 /** Verification code chip. Renders a button only when it can be copied, so it
  *  stays valid markup inside the clickable message rows. */
@@ -154,7 +154,7 @@ export function CodePill({
     <button
       className={cx(
         PILL,
-        "cursor-pointer transition-colors hover:border-primary/50 hover:bg-primary-soft active:translate-y-px",
+        "cursor-pointer transition-colors duration-100 hover:border-primary/50 hover:bg-primary-soft active:scale-[0.98]",
       )}
       onClick={onClick}
     >
@@ -200,17 +200,19 @@ export function Eyebrow({ children }: { children: ReactNode }) {
 
 export function EmptyState({
   icon: Icon,
+  iconClassName,
   title,
   description,
 }: {
   icon: LucideIcon;
+  iconClassName?: string;
   title: string;
   description: string;
 }) {
   return (
     <div className="flex min-h-200 flex-col items-center justify-center gap-6 text-center text-faint">
-      <div className="grid size-42 place-items-center rounded-xl border border-line bg-muted text-soft">
-        <Icon size={20} />
+      <div className="grid size-38 place-items-center rounded-lg border border-line bg-muted text-primary">
+        <Icon size={20} className={iconClassName} />
       </div>
       <strong className="text-sm font-semibold text-soft">{title}</strong>
       <span className="max-w-260 text-xs text-faint">{description}</span>
@@ -275,7 +277,7 @@ export function DialogHeading({
 
 export function DialogFooter({ children }: { children: ReactNode }) {
   return (
-    <footer className="-mx-14 -mb-12 mt-12 flex justify-end gap-6 border-t border-line bg-muted/50 px-14 py-10">
+    <footer className="-mx-13 -mb-13 mt-12 flex justify-end gap-6 border-t border-line bg-muted/50 px-13 py-10">
       {children}
     </footer>
   );
@@ -299,7 +301,7 @@ export function FieldLabel({
 }
 
 export const TEXTAREA_CLASS =
-  "resize-y rounded-lg border border-line bg-muted/50 p-10 font-mono text-xs leading-relaxed text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "min-w-0 w-full resize-y rounded-lg border border-line bg-muted/50 p-10 font-mono text-xs leading-relaxed text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 export function Pager({
   page,
@@ -325,7 +327,7 @@ export function Pager({
     <div
       className={cx(
         "flex shrink-0 items-center justify-between border-t border-line text-xs text-faint",
-        compact ? "min-h-34 px-8 py-4" : "min-h-40 py-4 pr-8 pl-12",
+        compact ? "min-h-32 px-7 py-3" : "min-h-36 py-3 pr-7 pl-10",
       )}
     >
       <span>
@@ -335,7 +337,7 @@ export function Pager({
       </span>
       <div className="flex items-center gap-4">
         {!compact && pageSize && onPageSizeChange ? (
-          <label className="inline-flex h-28 items-center gap-4 rounded border border-line bg-surface pr-4 pl-6">
+          <label className="inline-flex h-26 items-center gap-4 rounded border border-line bg-surface pr-4 pl-6">
             <span className="text-2xs text-faint">每页</span>
             <select
               value={pageSize}
@@ -352,7 +354,7 @@ export function Pager({
           </label>
         ) : null}
         <IconButton
-          className={cx("rounded", compact ? "size-24" : "size-28")}
+          className={cx("rounded", compact ? "size-22" : "size-26")}
           disabled={disabled || page <= 1}
           onClick={() => onChange(page - 1)}
           aria-label="上一页"
@@ -360,7 +362,7 @@ export function Pager({
           <ChevronLeftIcon size={compact ? 13 : 15} />
         </IconButton>
         <IconButton
-          className={cx("rounded", compact ? "size-24" : "size-28")}
+          className={cx("rounded", compact ? "size-22" : "size-26")}
           disabled={disabled || page >= totalPages}
           onClick={() => onChange(page + 1)}
           aria-label="下一页"
@@ -405,7 +407,7 @@ export function FetchToolbar({
         "flex min-w-0 items-center gap-6",
         bare
           ? "shrink-0"
-          : "w-full flex-wrap rounded-lg border border-line bg-muted/70 p-4",
+          : "w-full flex-wrap rounded-lg border border-line bg-muted/70 p-3",
       )}
     >
       <div className="flex items-center gap-4">

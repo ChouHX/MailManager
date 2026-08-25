@@ -1,7 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { save } from "@tauri-apps/plugin-dialog";
 import {
   BookOpenIcon,
+  DownloadIcon,
   LayoutListIcon,
   MoonIcon,
   PlusIcon,
@@ -26,6 +28,7 @@ import {
   fetchAccount,
   parseAccountText,
   runWithConcurrency,
+  serializeAccounts,
   type AccountFetchResult,
   type BatchRow,
   type MailAccount,
@@ -200,6 +203,32 @@ export default function App() {
         ? `另有 ${parsed.invalidLines.length} 行格式错误，已跳过。`
         : "账号仅保存在当前电脑。",
     });
+  }
+
+  async function handleExport() {
+    if (!accounts.length) {
+      toast.error("没有可导出的账号");
+      return;
+    }
+
+    const date = new Date().toISOString().slice(0, 10);
+    try {
+      const path = await save({
+        defaultPath: `mail-accounts-${date}.txt`,
+        filters: [{ name: "TXT 文本文件", extensions: ["txt"] }],
+      });
+      if (!path) return;
+
+      await invoke("export_accounts", {
+        path,
+        contents: serializeAccounts(accounts),
+      });
+      toast.success(`已导出 ${accounts.length} 个账号`, {
+        description: "导出文件包含完整账号凭据，请妥善保管。",
+      });
+    } catch (error) {
+      toast.error("导出账号失败", { description: errorMessage(error) });
+    }
   }
 
   function handleRegexSave(event: FormEvent<HTMLFormElement>) {
@@ -389,30 +418,30 @@ export default function App() {
 
   return (
     <main className="flex h-full min-w-0 flex-col">
-      <header className="z-20 flex min-h-62 shrink-0 items-center justify-between gap-16 border-b border-line/80 bg-surface px-14 py-7">
-        <div className="flex shrink-0 items-center gap-10">
+      <header className="z-20 flex h-54 shrink-0 items-center justify-between gap-12 border-b border-line/80 bg-surface px-12 py-5">
+        <div className="flex shrink-0 items-center gap-8">
           <img
             src={siteLogo}
             alt="CCMTC"
-            className="size-36 shrink-0 object-contain"
+            className="size-32 shrink-0 object-contain"
           />
           <div className="flex flex-col items-start leading-tight">
             <strong className="text-lg tracking-tight">Mail</strong>
-            <span className="mt-3 text-2xs text-faint max-[900px]:hidden">
+            <span className="mt-1 text-2xs text-faint max-[900px]:hidden">
               Outlook OAuth 桌面取件
             </span>
           </div>
         </div>
 
         {adSlot ? (
-          <div className="mx-auto min-w-180 max-w-720 flex-1 px-14">
+          <div className="mx-auto min-w-180 max-w-720 flex-1 px-10">
             <SiteAdCard config={adSlot} />
           </div>
         ) : (
           <div className="flex-1" />
         )}
 
-        <div className="flex shrink-0 items-center gap-8">
+        <div className="flex shrink-0 items-center gap-6">
           <Segmented
             label="取件模式"
             value={mode}
@@ -455,6 +484,14 @@ export default function App() {
           <Button onClick={() => setApiDocsOpen(true)}>
             <BookOpenIcon size={15} />
             API 文档
+          </Button>
+          <Button
+            onClick={() => void handleExport()}
+            disabled={!accounts.length}
+            title="导出文件包含完整账号凭据"
+          >
+            <DownloadIcon size={15} />
+            导出账号
           </Button>
           <Button variant="primary" onClick={() => setImportText("")}>
             <PlusIcon size={15} />

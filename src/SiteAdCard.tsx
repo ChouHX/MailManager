@@ -23,28 +23,35 @@ export function SiteAdCard({ config }: { config: AdSlotConfig }) {
   const action = config.primary_action;
 
   return (
-    <section className="flex min-h-46 items-center gap-9 overflow-hidden rounded-lg border border-line bg-muted px-8 py-3">
-      {/* Icon instead of a remote image: nothing to fail to load. */}
-      <span className="grid size-34 shrink-0 place-items-center rounded-sm border border-line bg-surface text-primary">
-        <MegaphoneIcon size={17} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <strong className="block truncate text-base tracking-tight">
-          {config.title}
-        </strong>
-        <p className="mt-3 truncate text-xs text-soft">{config.description}</p>
-      </div>
-      {action.label && action.href ? (
-        <Button
-          small
-          variant="accent"
-          className="shrink-0 rounded-full"
-          onClick={() => void openUrl(resolveSiteUrl(action.href))}
-        >
-          <GemIcon size={13} />
-          {action.label}
-        </Button>
-      ) : null}
-    </section>
+    <div className="ad-rainbow-frame h-42 rounded-lg">
+      <section className="ad-rainbow-panel flex h-full items-center gap-8 overflow-hidden rounded-[4px] px-7 py-2 shadow-[0_2px_10px_rgb(15_23_42/0.12)]">
+        {/* Icon instead of a remote image: nothing to fail to load. */}
+        <span className="grid size-30 shrink-0 place-items-center rounded-sm border border-primary bg-primary text-white shadow-key">
+          <MegaphoneIcon size={17} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-6">
+            <span className="shrink-0 rounded-xs bg-primary/12 px-5 py-1 text-2xs font-bold tracking-wider text-primary uppercase">
+              推荐
+            </span>
+            <strong className="truncate text-base font-semibold tracking-tight">
+              {config.title}
+            </strong>
+          </div>
+          <p className="mt-1 truncate text-xs text-soft">{config.description}</p>
+        </div>
+        {action.label && action.href ? (
+          <Button
+            small
+            variant="primary"
+            className="shrink-0 rounded-sm"
+            onClick={() => void openUrl(resolveSiteUrl(action.href))}
+          >
+            <GemIcon size={13} />
+            {action.label}
+          </Button>
+        ) : null}
+      </section>
+    </div>
   );
 }

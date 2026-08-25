@@ -72,18 +72,18 @@ function AccountSidebar({
 
   return (
     <aside className="flex min-h-0 flex-col overflow-hidden border-r border-line bg-surface">
-      <header className="flex min-h-61 shrink-0 items-center justify-between border-b border-line py-9 pr-10 pl-12">
+      <header className="flex h-58 shrink-0 items-center justify-between border-b border-line px-10 py-7">
         <div>
           <Eyebrow>Accounts</Eyebrow>
-          <h2 className="mt-2 text-lg tracking-tight">邮箱列表</h2>
+          <h2 className="mt-1 text-lg tracking-tight">邮箱列表</h2>
         </div>
-        <span className="inline-flex h-26 items-center gap-5 rounded-sm border border-line bg-muted px-8 text-xs font-bold text-soft">
+        <span className="inline-flex h-24 items-center gap-5 rounded-sm border border-primary/20 bg-primary-soft px-7 text-xs font-bold text-primary">
           <UsersIcon size={13} />
           {accounts.length}
         </span>
       </header>
 
-      <label className="mx-9 mt-9 mb-5 flex h-34 shrink-0 items-center gap-7 rounded-sm border border-line bg-muted px-9 text-faint">
+      <label className="mx-7 mt-7 mb-4 flex h-30 shrink-0 items-center gap-6 rounded-sm border border-line bg-muted px-8 text-faint">
         <SearchIcon size={14} />
         <input
           value={query}
@@ -96,13 +96,13 @@ function AccountSidebar({
         />
       </label>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-7 pt-4 pb-7">
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-3 pb-6">
         {visible.length ? (
           visible.map((account) => (
             <div
               key={account.id}
               className={cx(
-                "group flex w-full min-w-0 items-center gap-8 rounded-md border p-7",
+                "group flex w-full min-w-0 items-center gap-7 rounded-md border px-6 py-5",
                 selectedId === account.id
                   ? "border-primary/25 bg-primary-soft"
                   : "border-transparent hover:bg-hover",
@@ -151,7 +151,7 @@ function AccountSidebar({
       {accounts.length ? (
         <Button
           variant="ghost"
-          className="mx-8 mb-8 min-h-32 shrink-0"
+          className="mx-7 mb-7 min-h-28 shrink-0"
           onClick={onClearAll}
         >
           <Trash2Icon size={14} />
@@ -207,12 +207,12 @@ export function SingleView({
       />
 
       <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface">
-        <header className="flex min-h-72 shrink-0 items-center justify-between gap-14 border-b border-line px-14 py-11">
+        <header className="flex h-58 shrink-0 items-center justify-between gap-12 border-b border-line px-12 py-7">
           <div className="min-w-0 flex-1">
-            <h1 className="mt-2 max-w-620 truncate text-2xl tracking-tight">
+            <h1 className="max-w-620 truncate text-xl font-semibold tracking-tight">
               {selected?.email || "选择一个邮箱"}
             </h1>
-            <p className="mt-3 text-xs text-faint">左侧选择账号，右侧查看邮件。</p>
+            <p className="mt-2 text-xs text-faint">左侧选择账号，右侧查看邮件。</p>
           </div>
           <div className="ml-auto min-w-0 shrink-0">
             <FetchToolbar
@@ -249,7 +249,10 @@ export function SingleView({
           </div>
         ) : null}
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div
+          key={loading ? "loading" : selectedId}
+          className="min-h-0 flex-1 animate-fade-in overflow-y-auto p-4"
+        >
           {messages.length ? (
             messages.map((message) => (
               <MessageRow
@@ -264,6 +267,7 @@ export function SingleView({
           ) : loading ? (
             <EmptyState
               icon={LoaderCircleIcon}
+              iconClassName="animate-spin"
               title="正在读取邮件"
               description="IMAP 和 Graph 可能需要几秒钟。"
             />
@@ -305,9 +309,9 @@ function MessageRow({
   return (
     <button
       onClick={onOpen}
-      className="flex w-full min-w-0 cursor-pointer items-center gap-10 rounded-md border border-transparent border-b-line p-9 text-left hover:border-primary/25 hover:bg-primary-soft/40"
+      className="flex w-full min-w-0 cursor-pointer items-center gap-8 rounded-md border border-transparent border-b-line px-8 py-6 text-left transition-colors duration-100 hover:border-line-strong hover:bg-hover/70"
     >
-      <span className="grid size-31 shrink-0 place-items-center rounded-sm bg-primary-soft text-primary">
+      <span className="grid size-28 shrink-0 place-items-center rounded-sm bg-primary-soft text-primary">
         <MailIcon size={16} />
       </span>
       <span className="min-w-0 flex-1">

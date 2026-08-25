@@ -109,6 +109,20 @@ export function parseAccountText(text: string) {
   return { accounts, invalidLines };
 }
 
+/** Serializes accounts in the same line-based format accepted by the importer. */
+export function serializeAccounts(accounts: MailAccount[]) {
+  return accounts
+    .map((account) =>
+      [
+        account.email,
+        account.password,
+        account.client_id,
+        account.refresh_token,
+      ].join(ACCOUNT_SEPARATOR),
+    )
+    .join("\n");
+}
+
 async function fetchMailbox(
   account: MailAccount,
   protocol: MailProtocol,
