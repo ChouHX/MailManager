@@ -13,7 +13,11 @@ import {
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
-import { fetchSiteAdConfig, type AdSlotConfig } from "./ad";
+import {
+  BUILTIN_AD_SLOT,
+  fetchSiteAdConfig,
+  type AdSlotConfig,
+} from "./ad";
 import { BatchView } from "./BatchView";
 import {
   ApiDocsDialog,
@@ -89,7 +93,8 @@ export default function App() {
   const [messageContext, setMessageContext] = useState<MessageContext | null>(
     null,
   );
-  const [adSlot, setAdSlot] = useState<AdSlotConfig | null>(null);
+  // 先展示内置广告，站点返回可用配置后再覆盖，避免头部广告位闪空。
+  const [adSlot, setAdSlot] = useState<AdSlotConfig | null>(BUILTIN_AD_SLOT);
   const [apiDocsOpen, setApiDocsOpen] = useState(false);
 
   function updateSettings(patch: Partial<Settings>) {
@@ -97,9 +102,12 @@ export default function App() {
   }
 
   useEffect(() => {
-    void fetchSiteAdConfig()
-      .then((config) => setAdSlot(config.enabled ? config : null))
-      .catch(() => setAdSlot(null));
+    // 内置广告即时展示；站点返回可用配置时再覆盖，失败则继续用内置文案。
+    void fetchSiteAdConfig().then((config) => {
+      if (config.enabled && config.title.trim()) {
+        setAdSlot(config);
+      }
+    });
   }, []);
 
   useEffect(() => {
