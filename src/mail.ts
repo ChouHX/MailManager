@@ -190,6 +190,17 @@ export async function fetchAccount(
   };
 }
 
+/** 用现有 Refresh Token 换一个新的，返回带新令牌的账号。 */
+export async function refreshAccountToken(account: MailAccount) {
+  return await invoke<MailAccount>("refresh_account_token", {
+    account: {
+      email: account.email,
+      client_id: account.client_id,
+      refresh_token: account.refresh_token,
+    },
+  });
+}
+
 export async function runWithConcurrency<T, R>(
   items: T[],
   concurrency: number,

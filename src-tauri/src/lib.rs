@@ -21,7 +21,8 @@ pub fn run() {
             ad::fetch_ad_config,
             api::sync_api_accounts,
             export_accounts,
-            mail::fetch_mailbox
+            mail::fetch_mailbox,
+            mail::refresh_account_token
         ])
         .run(tauri::generate_context!())
         .expect("error while running CCMTC Mail");

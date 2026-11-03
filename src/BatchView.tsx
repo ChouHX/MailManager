@@ -3,6 +3,7 @@ import {
   CircleAlertIcon,
   CopyIcon,
   FileTextIcon,
+  KeyRoundIcon,
   LoaderCircleIcon,
   PlayIcon,
   RefreshCwIcon,
@@ -59,6 +60,7 @@ export function BatchView({
   onOpenRegex,
   onFetch,
   onFetchRow,
+  onRefreshToken,
   onDeleteAccount,
   onPageChange,
   onOpenMessage,
@@ -73,6 +75,7 @@ export function BatchView({
   onOpenRegex: () => void;
   onFetch: () => void;
   onFetchRow: (row: BatchRow) => void;
+  onRefreshToken: (account: BatchRow["account"]) => void;
   onDeleteAccount: (accountId: string) => void;
   onPageChange: (page: number) => void;
   onOpenMessage: (context: MessageContext) => void;
@@ -147,6 +150,7 @@ export function BatchView({
                   onOpenMessage={onOpenMessage}
                   onFetchRow={onFetchRow}
                   onDeleteAccount={onDeleteAccount}
+                  onRefreshToken={onRefreshToken}
                 />
               ))
             ) : (
@@ -186,12 +190,14 @@ function BatchRowCells({
   onOpenMessage,
   onFetchRow,
   onDeleteAccount,
+  onRefreshToken,
 }: {
   row: BatchRow;
   index: number;
   onOpenMessage: (context: MessageContext) => void;
   onFetchRow: (row: BatchRow) => void;
   onDeleteAccount: (accountId: string) => void;
+  onRefreshToken: (account: BatchRow["account"]) => void;
 }) {
   const { message, account } = row;
   const status = rowStatus(row);
@@ -292,6 +298,17 @@ function BatchRowCells({
             ) : (
               <RefreshCwIcon size={13} />
             )}
+          </IconButton>
+          <IconButton
+            className="size-26 rounded-sm"
+            aria-label={`刷新令牌 ${account.email}`}
+            title="刷新 Refresh Token"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRefreshToken(account);
+            }}
+          >
+            <KeyRoundIcon size={13} />
           </IconButton>
           <IconButton
             className="size-26 rounded-sm hover:border-danger/40 hover:bg-danger-soft hover:text-danger!"

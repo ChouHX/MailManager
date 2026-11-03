@@ -31,6 +31,7 @@ import {
   extractVerificationCode,
   fetchAccount,
   parseAccountText,
+  refreshAccountToken,
   runWithConcurrency,
   serializeAccounts,
   type AccountFetchResult,
@@ -151,6 +152,20 @@ export default function App() {
       void unlisten.then((dispose) => dispose());
     };
   }, []);
+
+  useEffect(() => {
+    if (!settings.autoRefreshTokens || !accounts.length) {
+      return;
+    }
+    // 30 天刷新一次，避免 Refresh Token 长期闲置失效。
+    const timer = window.setInterval(
+      () => {
+        void Promise.all(accounts.map(refreshToken));
+      },
+      30 * 24 * 60 * 60 * 1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [settings.autoRefreshTokens, accounts]);
 
   useEffect(() => {
     const pages = Math.max(
@@ -378,6 +393,25 @@ export default function App() {
     }
   }
 
+  /** 手动或定时刷新单个账号的 Refresh Token，成功后写回本地账号。 */
+  async function refreshToken(account: MailAccount) {
+    try {
+      const updated = await refreshAccountToken(account);
+      setAccounts((current) =>
+        current.map((item) =>
+          item.id === account.id
+            ? { ...item, refresh_token: updated.refresh_token }
+            : item,
+        ),
+      );
+      toast.success(`${account.email} Refresh Token 已更新`);
+    } catch (error) {
+      toast.error(`${account.email} 刷新失败`, {
+        description: errorMessage(error),
+      });
+    }
+  }
+
   async function fetchSingle(page: number, pageSize: number) {
     const account = accounts.find((item) => item.id === selectedAccountId);
     if (!account) {
@@ -520,6 +554,7 @@ export default function App() {
           onOpenRegex={() => setRegexDraft(settings.verificationPattern)}
           onFetch={() => void fetchBatchPage()}
           onFetchRow={(row) => void fetchOneRow(row)}
+          onRefreshToken={(account) => void refreshToken(account)}
           onDeleteAccount={deleteAccount}
           onPageChange={setBatchPage}
           onOpenMessage={setMessageContext}

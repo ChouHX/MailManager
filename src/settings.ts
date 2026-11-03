@@ -20,6 +20,7 @@ export type Settings = {
   batchPageSize: number;
   singlePageSize: number;
   theme: "light" | "dark";
+  autoRefreshTokens: boolean;
 };
 
 function readJson<T>(key: string, fallback: T): T {
@@ -73,6 +74,7 @@ export function readSettings(): Settings {
         : window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light",
+    autoRefreshTokens: stored.autoRefreshTokens === true,
   };
 }
 

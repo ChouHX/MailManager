@@ -61,6 +61,12 @@ pub struct MailAccount {
     pub refresh_token: String,
 }
 
+#[tauri::command]
+pub async fn refresh_account_token(account: MailAccount) -> Result<MailAccount, String> {
+    let (_, refresh_token) = refresh_access_token(http_client(), &account, IMAP_SCOPE).await?;
+    Ok(MailAccount { refresh_token, ..account })
+}
+
 #[derive(Debug, Deserialize)]
 pub struct FetchMailboxRequest {
     pub account: MailAccount,
