@@ -71,11 +71,11 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: Mail ${{ github.ref_name }}
           releaseBody: |
-            Cross-platform desktop builds for Mail.
+            Mail 跨平台桌面客户端安装包。
 
-            - Linux: DEB, RPM and AppImage
-            - Windows: NSIS and MSI
-            - macOS: Intel and Apple Silicon DMG/App bundles
+            - Linux：DEB、RPM、AppImage
+            - Windows：NSIS 安装程序、MSI
+            - macOS：Intel 与 Apple Silicon 的 DMG / App 包
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
